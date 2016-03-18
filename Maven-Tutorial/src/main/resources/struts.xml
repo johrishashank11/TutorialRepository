@@ -1,0 +1,11 @@
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+	
+	<struts>
+	<package name="default" extends="struts-default">
+	<action name="login" class="p1.login" method="execute">
+	<result name="success">success.jsp</result>
+	</action>
+	</package>
+	</struts>

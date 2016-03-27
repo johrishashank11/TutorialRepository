@@ -4,7 +4,11 @@
 	
 	<struts>
 	<package name="default" extends="struts-default">
-	<action name="login" class="com.altruist.action.LoginTable" method="execute">
+	<action name="login" class="com.altruist.action.LoginTable" method="saveselect">
+	<result name="success">success.jsp</result>
+	<result name="fail">/index.jsp</result>
+	</action>
+	<action name="update" class="com.altruist.action.LoginTable" method="update">
 	<result name="success">success.jsp</result>
 	<result name="fail">/index.jsp</result>
 	</action>

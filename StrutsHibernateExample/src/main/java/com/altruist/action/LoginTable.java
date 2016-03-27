@@ -14,6 +14,7 @@ import com.altruist.entity.Login;
 
 public class LoginTable 
 {
+private int id;	
 private String user;
 private String pass;
 private List<Login> loginlist;
@@ -31,7 +32,13 @@ public void setPass(String pass) {
 	this.pass = pass;
 }
 
-public String execute()
+public int getId() {
+	return id;
+}
+public void setId(int id) {
+	this.id = id;
+}
+public String saveselect()
 {
 	String result="";
 	try
@@ -48,6 +55,31 @@ public String execute()
 		String hql="from com.altruist.entity.Login";
 		Query query=session.createQuery(hql);
 		loginlist= query.list();
+		session.close();
+		result="success";
+	}
+	catch(Exception e)
+	{
+		e.printStackTrace();
+	}
+	return result;
+}
+
+public String update()
+{
+	String result="";
+	try
+	{
+		Login login=new Login(user,pass);
+		login.setId(id);
+		Configuration configuration= new Configuration();
+		configuration.configure("hibernate.cfg.xml");
+		StandardServiceRegistryBuilder builder= new StandardServiceRegistryBuilder().applySettings(configuration.getProperties());
+		SessionFactory sessionFactory= configuration.buildSessionFactory(builder.build());
+		Session session= sessionFactory.openSession();
+		Transaction transaction= session.beginTransaction();
+		session.update(login);
+		transaction.commit();
 		session.close();
 		result="success";
 	}

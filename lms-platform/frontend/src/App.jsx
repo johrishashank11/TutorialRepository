@@ -6,6 +6,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 
 // Admin
 import AdminPanel from './pages/AdminPanel';
+import CourseManagement from './pages/CourseManagement';
 // Trainer
 import TrainerView from './pages/TrainerView';
 // Trainee
@@ -16,7 +17,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useContext(AuthContext);
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // If logged in but wrong role, send them to their respective root
     if (user.role === 'ROLE_ADMIN') return <Navigate to="/admin" replace />;
     if (user.role === 'ROLE_TRAINER') return <Navigate to="/trainer" replace />;
     if (user.role === 'ROLE_TRAINEE') return <Navigate to="/trainee" replace />;
@@ -50,8 +50,7 @@ function App() {
             </ProtectedRoute>
           }>
             <Route index element={<AdminPanel />} />
-            {/* Additional sub-routes will map to specific components later */}
-            <Route path="courses" element={<AdminPanel />} />
+            <Route path="courses" element={<CourseManagement />} />
             <Route path="batches" element={<AdminPanel />} />
             <Route path="users" element={<AdminPanel />} />
             <Route path="settings" element={<div>Settings Component</div>} />

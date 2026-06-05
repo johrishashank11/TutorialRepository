@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -61,10 +62,42 @@ public class LmsController {
         return batchRepository.findAll();
     }
 
+    @PostMapping("/batches/{batchId}/courses/{courseId}")
+    public ResponseEntity<Batch> assignCourseToBatch(@PathVariable Long batchId, @PathVariable Long courseId) {
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new RuntimeException("Batch not found"));
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        if (batch.getCourses() == null) {
+            batch.setCourses(new ArrayList<>());
+        }
+
+        if(!batch.getCourses().contains(course)){
+            batch.getCourses().add(course);
+        }
+
+        Batch updatedBatch = batchRepository.save(batch);
+        return ResponseEntity.ok(updatedBatch);
+    }
+
     // Courses
     @PostMapping("/courses")
     public Course createCourse(@RequestBody Course course) {
         return courseRepository.save(course);
+    }
+
+    @PutMapping("/courses/{id}")
+    public ResponseEntity<Course> updateCourse(@PathVariable Long id, @RequestBody Course courseDetails) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        course.setTitle(courseDetails.getTitle());
+        course.setDescription(courseDetails.getDescription());
+        course.setActive(courseDetails.isActive());
+
+        Course updatedCourse = courseRepository.save(course);
+        return ResponseEntity.ok(updatedCourse);
     }
 
     @GetMapping("/courses")

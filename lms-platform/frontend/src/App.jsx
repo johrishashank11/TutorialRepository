@@ -2,28 +2,37 @@ import React, { useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Login from './pages/Login';
+import DashboardLayout from './layouts/DashboardLayout';
 
-// Placeholder Pages
-import AdminPanel from "./pages/AdminPanel";
-import TrainerView from "./pages/TrainerView";
-import TraineeDashboard from "./pages/TraineeDashboard";
+// Admin
+import AdminPanel from './pages/AdminPanel';
+// Trainer
+import TrainerView from './pages/TrainerView';
+// Trainee
+import TraineeDashboard from './pages/TraineeDashboard';
 
+// Role Guard Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useContext(AuthContext);
-  if (!user) return <Navigate to="/login" />;
-  if (allowedRoles && !allowedRoles.includes(user.role)) return <div>Unauthorized</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // If logged in but wrong role, send them to their respective root
+    if (user.role === 'ROLE_ADMIN') return <Navigate to="/admin" replace />;
+    if (user.role === 'ROLE_TRAINER') return <Navigate to="/trainer" replace />;
+    if (user.role === 'ROLE_TRAINEE') return <Navigate to="/trainee" replace />;
+    return <div>Unauthorized</div>;
+  }
   return children;
 };
 
-const DashboardRouter = () => {
+// Root router based on role
+const RootRedirect = () => {
   const { user } = useContext(AuthContext);
-  if (!user) return <Navigate to="/login" />;
-
-  if (user.role === 'ROLE_ADMIN') return <Navigate to="/admin" />;
-  if (user.role === 'ROLE_TRAINER') return <Navigate to="/trainer" />;
-  if (user.role === 'ROLE_TRAINEE') return <Navigate to="/trainee" />;
-
-  return <div>Unknown Role</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role === 'ROLE_ADMIN') return <Navigate to="/admin" replace />;
+  if (user.role === 'ROLE_TRAINER') return <Navigate to="/trainer" replace />;
+  if (user.role === 'ROLE_TRAINEE') return <Navigate to="/trainee" replace />;
+  return <Navigate to="/login" replace />;
 };
 
 function App() {
@@ -32,26 +41,42 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/" element={<RootRedirect />} />
 
-          <Route path="/" element={<DashboardRouter />} />
-
-          <Route path="/admin/*" element={
+          {/* Admin Routes */}
+          <Route path="/admin" element={
             <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
-              <AdminPanel />
+              <DashboardLayout />
             </ProtectedRoute>
-          } />
+          }>
+            <Route index element={<AdminPanel />} />
+            {/* Additional sub-routes will map to specific components later */}
+            <Route path="courses" element={<AdminPanel />} />
+            <Route path="batches" element={<AdminPanel />} />
+            <Route path="users" element={<AdminPanel />} />
+            <Route path="settings" element={<div>Settings Component</div>} />
+          </Route>
 
-          <Route path="/trainer/*" element={
+          {/* Trainer Routes */}
+          <Route path="/trainer" element={
             <ProtectedRoute allowedRoles={['ROLE_TRAINER']}>
-              <TrainerView />
+              <DashboardLayout />
             </ProtectedRoute>
-          } />
+          }>
+            <Route index element={<TrainerView />} />
+            <Route path="batches" element={<TrainerView />} />
+            <Route path="analytics" element={<div>Detailed Analytics Component</div>} />
+          </Route>
 
-          <Route path="/trainee/*" element={
+          {/* Trainee Routes */}
+          <Route path="/trainee" element={
             <ProtectedRoute allowedRoles={['ROLE_TRAINEE']}>
-              <TraineeDashboard />
+              <DashboardLayout />
             </ProtectedRoute>
-          } />
+          }>
+            <Route index element={<TraineeDashboard />} />
+            <Route path="progress" element={<div>Progress Component</div>} />
+          </Route>
 
         </Routes>
       </Router>

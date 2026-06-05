@@ -7,6 +7,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 // Admin
 import AdminPanel from './pages/AdminPanel';
 import CourseManagement from './pages/CourseManagement';
+import BatchConfig from './pages/BatchConfig';
 // Trainer
 import TrainerView from './pages/TrainerView';
 // Trainee
@@ -51,7 +52,7 @@ function App() {
           }>
             <Route index element={<AdminPanel />} />
             <Route path="courses" element={<CourseManagement />} />
-            <Route path="batches" element={<AdminPanel />} />
+            <Route path="batches" element={<BatchConfig />} />
             <Route path="users" element={<AdminPanel />} />
             <Route path="settings" element={<div>Settings Component</div>} />
           </Route>

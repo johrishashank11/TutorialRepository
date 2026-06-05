@@ -53,7 +53,6 @@ function App() {
             <Route index element={<AdminPanel />} />
             <Route path="courses" element={<CourseManagement />} />
             <Route path="batches" element={<BatchConfig />} />
-            <Route path="users" element={<AdminPanel />} />
             <Route path="settings" element={<div>Settings Component</div>} />
           </Route>
 

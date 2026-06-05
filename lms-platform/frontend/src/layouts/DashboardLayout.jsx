@@ -43,7 +43,6 @@ function DashboardLayout() {
           { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
           { name: 'Course Management', path: '/admin/courses', icon: BookOpen },
           { name: 'Batch Config', path: '/admin/batches', icon: FileSpreadsheet },
-          { name: 'User Directory', path: '/admin/users', icon: Users },
           { name: 'Settings', path: '/admin/settings', icon: Settings },
         ];
       case 'ROLE_TRAINER':

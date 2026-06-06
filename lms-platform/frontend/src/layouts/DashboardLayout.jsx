@@ -43,12 +43,14 @@ function DashboardLayout() {
           { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
           { name: 'Course Management', path: '/admin/courses', icon: BookOpen },
           { name: 'Batch Config', path: '/admin/batches', icon: FileSpreadsheet },
+          { name: 'Test Management', path: '/admin/tests', icon: FileQuestion },
           { name: 'Settings', path: '/admin/settings', icon: Settings },
         ];
       case 'ROLE_TRAINER':
         return [
           { name: 'Dashboard', path: '/trainer', icon: LayoutDashboard },
           { name: 'My Batches', path: '/trainer/batches', icon: Users },
+          { name: 'Test Management', path: '/trainer/tests', icon: FileQuestion },
           { name: 'Analytics', path: '/trainer/analytics', icon: Activity },
         ];
       case 'ROLE_TRAINEE':

@@ -8,6 +8,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import AdminPanel from './pages/AdminPanel';
 import CourseManagement from './pages/CourseManagement';
 import BatchConfig from './pages/BatchConfig';
+import TestManagement from './pages/TestManagement';
 // Trainer
 import TrainerView from './pages/TrainerView';
 // Trainee
@@ -53,6 +54,7 @@ function App() {
             <Route index element={<AdminPanel />} />
             <Route path="courses" element={<CourseManagement />} />
             <Route path="batches" element={<BatchConfig />} />
+            <Route path="tests" element={<TestManagement />} />
             <Route path="settings" element={<div>Settings Component</div>} />
           </Route>
 
@@ -64,6 +66,7 @@ function App() {
           }>
             <Route index element={<TrainerView />} />
             <Route path="batches" element={<TrainerView />} />
+            <Route path="tests" element={<TestManagement />} />
             <Route path="analytics" element={<div>Detailed Analytics Component</div>} />
           </Route>
 

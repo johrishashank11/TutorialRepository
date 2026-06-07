@@ -1,4 +1,4 @@
-package com.lms.authservice.model;
+package com.lms.entity;
 
 import jakarta.persistence.*;
 import java.util.Collection;

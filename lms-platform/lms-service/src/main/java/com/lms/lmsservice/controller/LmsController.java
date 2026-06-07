@@ -1,14 +1,17 @@
 package com.lms.lmsservice.controller;
 
-import com.lms.lmsservice.model.Batch;
-import com.lms.lmsservice.model.Content;
-import com.lms.lmsservice.model.Course;
-import com.lms.lmsservice.model.Process;
-import com.lms.lmsservice.repository.BatchRepository;
-import com.lms.lmsservice.repository.ContentRepository;
-import com.lms.lmsservice.repository.CourseRepository;
-import com.lms.lmsservice.repository.ProcessRepository;
+import com.lms.entity.Batch;
+import com.lms.entity.Content;
+import com.lms.entity.Course;
+import com.lms.entity.Process;
+import com.lms.lmsservice.constant.MessageConstants;
+import com.lms.repository.BatchRepository;
+import com.lms.repository.ContentRepository;
+import com.lms.repository.CourseRepository;
+import com.lms.repository.ProcessRepository;
 import com.lms.lmsservice.service.FileStorageService;
+import com.lms.model.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,31 +42,37 @@ public class LmsController {
 
     // Processes
     @PostMapping("/processes")
-    public Process createProcess(@RequestBody Process process) {
-        return processRepository.save(process);
+    public ResponseEntity<ApiResponse<Process>> createProcess(@RequestBody Process process) {
+        Process saved = processRepository.save(process);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, MessageConstants.PROCESS_CREATED, saved));
     }
 
     @GetMapping("/processes")
-    public List<Process> getAllProcesses() {
-        return processRepository.findAll();
+    public ResponseEntity<ApiResponse<List<Process>>> getAllProcesses() {
+        List<Process> processes = processRepository.findAll();
+        return ResponseEntity.ok(new ApiResponse<>(true, MessageConstants.PROCESS_FETCHED, processes));
     }
 
     // Batches
     @PostMapping("/processes/{processId}/batches")
-    public Batch createBatch(@PathVariable Long processId, @RequestBody Batch batch) {
+    public ResponseEntity<ApiResponse<Batch>> createBatch(@PathVariable Long processId, @RequestBody Batch batch) {
         Process process = processRepository.findById(processId)
                 .orElseThrow(() -> new RuntimeException("Process not found"));
         batch.setProcess(process);
-        return batchRepository.save(batch);
+        Batch saved = batchRepository.save(batch);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, MessageConstants.BATCH_CREATED, saved));
     }
 
     @GetMapping("/batches")
-    public List<Batch> getAllBatches() {
-        return batchRepository.findAll();
+    public ResponseEntity<ApiResponse<List<Batch>>> getAllBatches() {
+        List<Batch> batches = batchRepository.findAll();
+        return ResponseEntity.ok(new ApiResponse<>(true, MessageConstants.BATCH_FETCHED, batches));
     }
 
     @PostMapping("/batches/{batchId}/courses/{courseId}")
-    public ResponseEntity<Batch> assignCourseToBatch(@PathVariable Long batchId, @PathVariable Long courseId) {
+    public ResponseEntity<ApiResponse<Batch>> assignCourseToBatch(@PathVariable Long batchId, @PathVariable Long courseId) {
         Batch batch = batchRepository.findById(batchId)
                 .orElseThrow(() -> new RuntimeException("Batch not found"));
         Course course = courseRepository.findById(courseId)
@@ -78,17 +87,20 @@ public class LmsController {
         }
 
         Batch updatedBatch = batchRepository.save(batch);
-        return ResponseEntity.ok(updatedBatch);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, MessageConstants.BATCH_ASSIGNED, updatedBatch));
     }
 
     // Courses
     @PostMapping("/courses")
-    public Course createCourse(@RequestBody Course course) {
-        return courseRepository.save(course);
+    public ResponseEntity<ApiResponse<Course>> createCourse(@RequestBody Course course) {
+        Course saved = courseRepository.save(course);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, MessageConstants.COURSE_CREATED, saved));
     }
 
     @PutMapping("/courses/{id}")
-    public ResponseEntity<Course> updateCourse(@PathVariable Long id, @RequestBody Course courseDetails) {
+    public ResponseEntity<ApiResponse<Course>> updateCourse(@PathVariable Long id, @RequestBody Course courseDetails) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
 
@@ -97,17 +109,18 @@ public class LmsController {
         course.setActive(courseDetails.isActive());
 
         Course updatedCourse = courseRepository.save(course);
-        return ResponseEntity.ok(updatedCourse);
+        return ResponseEntity.ok(new ApiResponse<>(true, MessageConstants.COURSE_UPDATED, updatedCourse));
     }
 
     @GetMapping("/courses")
-    public List<Course> getAllCourses() {
-        return courseRepository.findAll();
+    public ResponseEntity<ApiResponse<List<Course>>> getAllCourses() {
+        List<Course> courses = courseRepository.findAll();
+        return ResponseEntity.ok(new ApiResponse<>(true, MessageConstants.COURSE_FETCHED, courses));
     }
 
     // Contents
     @PostMapping("/courses/{courseId}/contents")
-    public ResponseEntity<Content> uploadContent(@PathVariable Long courseId,
+    public ResponseEntity<ApiResponse<Content>> uploadContent(@PathVariable Long courseId,
                                                  @RequestParam("file") MultipartFile file,
                                                  @RequestParam("fileType") String fileType) {
         Course course = courseRepository.findById(courseId)
@@ -128,6 +141,7 @@ public class LmsController {
 
         Content savedContent = contentRepository.save(content);
 
-        return ResponseEntity.ok(savedContent);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(true, MessageConstants.CONTENT_UPLOADED, savedContent));
     }
 }

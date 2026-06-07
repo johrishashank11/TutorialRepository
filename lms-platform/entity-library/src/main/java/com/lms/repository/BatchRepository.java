@@ -1,6 +1,6 @@
-package com.lms.lmsservice.repository;
+package com.lms.repository;
 
-import com.lms.lmsservice.model.Batch;
+import com.lms.entity.Batch;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 

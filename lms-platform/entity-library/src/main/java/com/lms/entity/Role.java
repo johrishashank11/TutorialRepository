@@ -1,4 +1,4 @@
-package com.lms.authservice.model;
+package com.lms.entity;
 
 public enum Role {
     ROLE_ADMIN,

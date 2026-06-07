@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
-import api from '../services/api';
+import { getToken, getRole, getUserId, isTokenExpired, setToken, setRole, setUserId, clearAuth } from '../utils/tokenUtils';
+import { loginApi } from '../services/authService';
 
 export const AuthContext = createContext();
 
@@ -9,48 +9,39 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    const userId = localStorage.getItem('userId');
+    const token = getToken();
+    const role = getRole();
+    const userId = getUserId();
+
     if (token && role) {
-      try {
-        const decoded = jwtDecode(token);
-        // Ensure token is not expired
-        if (decoded.exp * 1000 < Date.now()) {
-          logout();
-        } else {
-          setUser({ username: decoded.sub, role, userId });
-        }
-      } catch (err) {
-        logout();
+      if (isTokenExpired(token)) {
+        clearAuth();
+      } else {
+        // Mock decoding username for UX purposes
+        setUser({ username: role.replace('ROLE_', '').toLowerCase(), role, userId });
       }
     }
     setLoading(false);
   }, []);
 
   const login = async (username, password) => {
-    const res = await api.post('/auth/login', { username, password });
-    localStorage.setItem('token', res.data.token);
-    localStorage.setItem('role', res.data.role);
-    localStorage.setItem('userId', res.data.userId);
-    setUser({ username, role: res.data.role, userId: res.data.userId });
-  };
-
-  const register = async (username, password, role) => {
-    await api.post('/auth/register', { username, password, role });
+    const res = await loginApi(username, password);
+    const { token, role, userId } = res.data;
+    setToken(token);
+    setRole(role);
+    setUserId(userId);
+    setUser({ username, role, userId });
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('userId');
+    clearAuth();
     setUser(null);
   };
 
   if (loading) return <div>Loading...</div>;
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

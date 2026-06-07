@@ -1,6 +1,6 @@
-package com.lms.authservice.repository;
+package com.lms.repository;
 
-import com.lms.authservice.model.User;
+import com.lms.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

@@ -1,34 +1,35 @@
 import React, { useState, useEffect, useContext } from 'react';
-import api from '../services/api';
-import { AuthContext } from '../context/AuthContext';
-import ScormPlayer from '../components/ScormPlayer';
 import { PlayCircle, CheckCircle, FileText, ChevronLeft, Award, Clock } from 'lucide-react';
-import { cn } from '../layouts/DashboardLayout';
+import { AuthContext } from '../context/AuthContext';
+import { fetchCourses } from '../services/lmsService';
+import ScormPlayer from '../components/ScormPlayer';
+import { useToast } from '../hooks/useToast';
+import { cn } from '../components/layout/DashboardLayout';
 
 function TraineeDashboard() {
   const { user } = useContext(AuthContext);
   const [courses, setCourses] = useState([]);
   const [activeCourse, setActiveCourse] = useState(null);
   const [activeContent, setActiveContent] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
-    fetchAssignedCourses();
+    loadData();
   }, []);
 
-  const fetchAssignedCourses = async () => {
+  const loadData = async () => {
     try {
-      const res = await api.get('/lms/courses');
-      setCourses(res.data);
+      const res = await fetchCourses();
+      setCourses(res.data || []);
     } catch (err) {
-      console.error(err);
+      toast.error('Failed to load assigned courses.');
     }
   };
 
   const handleContentComplete = () => {
-    alert("Module marked as completed!");
+    toast.success("Module marked as completed!");
   };
 
-  // IF NO COURSE SELECTED: Show the Course Catalog Grid
   if (!activeCourse) {
     return (
       <div className="space-y-6">
@@ -47,7 +48,6 @@ function TraineeDashboard() {
                 onClick={() => setActiveCourse(course)}
                 className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all cursor-pointer overflow-hidden group flex flex-col h-full"
               >
-                {/* Course Thumbnail Placeholder */}
                 <div className="h-40 bg-gradient-to-br from-brand-500 to-blue-600 relative p-6 flex flex-col justify-end">
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition"></div>
                   <Award size={32} className="text-white/20 absolute top-4 right-4" />
@@ -69,9 +69,6 @@ function TraineeDashboard() {
                     <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div className="bg-brand-500 h-2 rounded-full" style={{ width: '45%' }}></div>
                     </div>
-                    <div className="mt-4 flex items-center gap-2 text-xs text-gray-500 font-medium uppercase tracking-wider">
-                      <Clock size={14} /> 2h 15m remaining
-                    </div>
                   </div>
                 </div>
               </div>
@@ -82,33 +79,19 @@ function TraineeDashboard() {
     );
   }
 
-  // IF COURSE IS SELECTED: Show "Learning Mode" UI
   return (
-    <div className="h-full flex flex-col -m-6"> {/* Negative margin to expand past layout padding */}
-
-      {/* Learning Mode Header */}
+    <div className="h-full flex flex-col -m-6">
       <div className="h-16 bg-slate-900 text-white px-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => { setActiveCourse(null); setActiveContent(null); }}
-            className="flex items-center gap-2 text-slate-300 hover:text-white transition"
-          >
+          <button onClick={() => { setActiveCourse(null); setActiveContent(null); }} className="flex items-center gap-2 text-slate-300 hover:text-white transition">
             <ChevronLeft size={20} /> <span className="font-medium">Back to Dashboard</span>
           </button>
           <div className="h-6 w-px bg-slate-700"></div>
           <h2 className="font-bold truncate max-w-xl">{activeCourse.title}</h2>
         </div>
-        <div className="hidden md:flex items-center gap-3">
-          <span className="text-sm text-slate-400">Your Progress</span>
-          <div className="w-32 bg-slate-700 rounded-full h-2">
-            <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '45%' }}></div>
-          </div>
-        </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden bg-black">
-
-        {/* Main Content Player */}
         <div className="flex-1 flex flex-col relative">
           {!activeContent ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-slate-950">
@@ -127,22 +110,12 @@ function TraineeDashboard() {
                 {activeContent.fileType === 'SCORM' ? (
                   <ScormPlayer contentUrl={activeContent.filePath} onComplete={handleContentComplete} />
                 ) : activeContent.fileType === 'VIDEO' ? (
-                  <video controls className="w-full h-full object-contain bg-black">
-                    <source src={activeContent.filePath} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
+                  <video controls className="w-full h-full object-contain bg-black"><source src={activeContent.filePath} type="video/mp4" /></video>
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-slate-900 border-t border-slate-800">
                     <FileText size={48} className="mb-4 opacity-50" />
                     <p className="mb-4">Document available for viewing</p>
-                    <a
-                      href={activeContent.filePath}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="bg-brand-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-700 transition"
-                    >
-                      Open Document
-                    </a>
+                    <a href={activeContent.filePath} target="_blank" rel="noreferrer" className="bg-brand-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-700 transition">Open Document</a>
                   </div>
                 )}
               </div>
@@ -150,64 +123,28 @@ function TraineeDashboard() {
           )}
         </div>
 
-        {/* Course Curriculum Sidebar */}
         <div className="w-80 bg-white border-l border-gray-200 flex flex-col flex-shrink-0 z-10 shadow-xl overflow-hidden">
           <div className="p-4 border-b border-gray-200 bg-gray-50 flex-shrink-0">
             <h3 className="font-bold text-gray-900">Course Curriculum</h3>
           </div>
-
           <div className="flex-1 overflow-y-auto">
             <div className="py-2">
-              {activeCourse.contents?.length === 0 && (
-                <p className="px-4 py-4 text-sm text-gray-500 text-center">No modules uploaded yet.</p>
-              )}
+              {activeCourse.contents?.length === 0 && <p className="px-4 py-4 text-sm text-gray-500 text-center">No modules uploaded yet.</p>}
               {activeCourse.contents?.map((content, idx) => {
                 const isActive = activeContent?.id === content.id;
                 return (
-                  <button
-                    key={content.id}
-                    className={cn(
-                      "w-full text-left px-4 py-3 flex items-start gap-3 transition-colors border-l-2",
-                      isActive ? "bg-brand-50 border-brand-600" : "hover:bg-gray-50 border-transparent"
-                    )}
-                    onClick={() => setActiveContent(content)}
-                  >
-                    <div className="mt-0.5">
-                      {isActive ? (
-                        <PlayCircle size={18} className="text-brand-600" />
-                      ) : (
-                        <CheckCircle size={18} className="text-gray-300" />
-                      )}
-                    </div>
+                  <button key={content.id} className={cn("w-full text-left px-4 py-3 flex items-start gap-3 transition-colors border-l-2", isActive ? "bg-brand-50 border-brand-600" : "hover:bg-gray-50 border-transparent")} onClick={() => setActiveContent(content)}>
+                    <div className="mt-0.5">{isActive ? <PlayCircle size={18} className="text-brand-600" /> : <CheckCircle size={18} className="text-gray-300" />}</div>
                     <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        "text-sm font-medium leading-tight mb-1 break-words",
-                        isActive ? "text-brand-900" : "text-gray-700"
-                      )}>
-                        {idx + 1}. {content.fileName}
-                      </p>
-                      <p className="text-xs text-gray-500 font-medium">
-                        {content.fileType}
-                      </p>
+                      <p className={cn("text-sm font-medium leading-tight mb-1 break-words", isActive ? "text-brand-900" : "text-gray-700")}>{idx + 1}. {content.fileName}</p>
+                      <p className="text-xs text-gray-500 font-medium">{content.fileType}</p>
                     </div>
                   </button>
                 )
               })}
-
-              {/* Fake Assessment Link */}
-              <div className="mt-4 mx-4">
-                <button className="w-full bg-slate-900 text-white rounded-lg p-3 flex items-center justify-between hover:bg-black transition shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Award size={18} className="text-yellow-500" />
-                    <span className="text-sm font-semibold">Final Exam</span>
-                  </div>
-                  <span className="text-xs font-bold bg-slate-700 px-2 py-0.5 rounded text-slate-300">Pending</span>
-                </button>
-              </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
-package com.lms.lmsservice.repository;
+package com.lms.repository;
 
-import com.lms.lmsservice.model.Test;
+import com.lms.entity.Test;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TestRepository extends JpaRepository<Test, Long> {}

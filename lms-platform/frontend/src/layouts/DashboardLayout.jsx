@@ -12,7 +12,7 @@ import {
   Users,
   LayoutDashboard,
   Activity,
-  FileSpreadsheet,
+  FileSpreadsheet, FileQuestion,
   GraduationCap
 } from 'lucide-react';
 import { clsx, } from 'clsx';

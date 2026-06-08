@@ -5,21 +5,21 @@ import { AppModal } from '../components/common/AppModal';
 import { AppButton } from '../components/common/AppButton';
 import { AppInput } from '../components/common/AppInput';
 import { AppBadge } from '../components/common/AppBadge';
+import { AppLoader } from '../components/common/AppLoader';
 import { useToast } from '../hooks/useToast';
 import { fetchCourses, fetchBatches, createCourse, updateCourse, uploadCourseContent, assignBatchToCourse } from '../services/lmsService';
 
 function CourseManagement() {
   const [courses, setCourses] = useState([]);
   const [batches, setBatches] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
 
-  // Modals state
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [isContentModalOpen, setIsContentModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
 
-  // Form states
   const [currentCourse, setCurrentCourse] = useState({ id: null, title: '', description: '', active: true });
   const [file, setFile] = useState(null);
   const [selectedBatchId, setSelectedBatchId] = useState('');
@@ -29,8 +29,8 @@ function CourseManagement() {
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const [coursesRes, batchesRes] = await Promise.all([fetchCourses(), fetchBatches()]);
       setCourses(coursesRes.data || []);
       setBatches(batchesRes.data || []);
@@ -43,6 +43,7 @@ function CourseManagement() {
 
   const handleSaveCourse = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       if (currentCourse.id) {
         await updateCourse(currentCourse.id, currentCourse);
@@ -55,6 +56,8 @@ function CourseManagement() {
       loadData();
     } catch (err) {
       toast.error(err.message || 'Failed to save course.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -62,6 +65,7 @@ function CourseManagement() {
     e.preventDefault();
     if (!currentCourse.id || !file) return;
 
+    setIsSubmitting(true);
     const formData = new FormData();
     formData.append('file', file);
     const ext = file.name.split('.').pop().toUpperCase();
@@ -80,12 +84,15 @@ function CourseManagement() {
       loadData();
     } catch (err) {
       toast.error(err.message || 'Upload failed.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAssignBatch = async (e) => {
     e.preventDefault();
     if (!currentCourse.id || !selectedBatchId) return;
+    setIsSubmitting(true);
     try {
       await assignBatchToCourse(selectedBatchId, currentCourse.id);
       setIsBatchModalOpen(false);
@@ -93,6 +100,8 @@ function CourseManagement() {
       loadData();
     } catch (err) {
       toast.error(err.message || 'Failed to assign batch.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -141,6 +150,8 @@ function CourseManagement() {
     }
   ];
 
+  if (loading) return <AppLoader fullScreen />;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -158,48 +169,45 @@ function CourseManagement() {
         <AppTable columns={columns} data={courses} />
       </div>
 
-      {/* Course Modal */}
-      <AppModal isOpen={isCourseModalOpen} onClose={() => setIsCourseModalOpen(false)} title={currentCourse.id ? 'Edit Course' : 'Create Course'}>
+      <AppModal isOpen={isCourseModalOpen} onClose={() => !isSubmitting && setIsCourseModalOpen(false)} title={currentCourse.id ? 'Edit Course' : 'Create Course'}>
         <form onSubmit={handleSaveCourse} className="space-y-4">
-          <AppInput label="Title" value={currentCourse.title} onChange={e => setCurrentCourse({...currentCourse, title: e.target.value})} required />
-          <AppInput label="Description" value={currentCourse.description} onChange={e => setCurrentCourse({...currentCourse, description: e.target.value})} />
+          <AppInput label="Title" value={currentCourse.title} onChange={e => setCurrentCourse({...currentCourse, title: e.target.value})} required disabled={isSubmitting} />
+          <AppInput label="Description" value={currentCourse.description} onChange={e => setCurrentCourse({...currentCourse, description: e.target.value})} disabled={isSubmitting} />
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="activeToggle" className="w-4 h-4 text-brand-600 rounded" checked={currentCourse.active} onChange={e => setCurrentCourse({...currentCourse, active: e.target.checked})} />
+            <input type="checkbox" id="activeToggle" className="w-4 h-4 text-brand-600 rounded" checked={currentCourse.active} onChange={e => setCurrentCourse({...currentCourse, active: e.target.checked})} disabled={isSubmitting} />
             <label htmlFor="activeToggle" className="text-sm font-medium text-gray-700">Course is Active</label>
           </div>
           <div className="mt-6 flex justify-end gap-3">
-            <AppButton variant="ghost" onClick={() => setIsCourseModalOpen(false)}>Cancel</AppButton>
-            <AppButton type="submit">Save</AppButton>
+            <AppButton variant="ghost" onClick={() => setIsCourseModalOpen(false)} disabled={isSubmitting}>Cancel</AppButton>
+            <AppButton type="submit" disabled={isSubmitting}>{isSubmitting ? <AppLoader size={16} className="text-white mr-2" /> : null}Save</AppButton>
           </div>
         </form>
       </AppModal>
 
-      {/* Content Modal */}
-      <AppModal isOpen={isContentModalOpen} onClose={() => setIsContentModalOpen(false)} title="Upload Content">
+      <AppModal isOpen={isContentModalOpen} onClose={() => !isSubmitting && setIsContentModalOpen(false)} title="Upload Content">
         <form onSubmit={handleUploadContent} className="space-y-4">
           <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center hover:bg-gray-50 relative cursor-pointer">
             <UploadCloud size={32} className="text-brand-500 mb-2" />
             <span className="text-sm font-medium text-gray-700">Select file (MP4, PDF, DOCX, ZIP)</span>
-            <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={e => setFile(e.target.files[0])} required />
+            <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={e => setFile(e.target.files[0])} required disabled={isSubmitting} />
           </div>
           {file && <div className="text-sm text-emerald-600 font-medium text-center">{file.name}</div>}
           <div className="mt-6 flex justify-end gap-3">
-            <AppButton variant="ghost" onClick={() => setIsContentModalOpen(false)}>Cancel</AppButton>
-            <AppButton type="submit" disabled={!file}>Upload</AppButton>
+            <AppButton variant="ghost" onClick={() => setIsContentModalOpen(false)} disabled={isSubmitting}>Cancel</AppButton>
+            <AppButton type="submit" disabled={!file || isSubmitting}>{isSubmitting ? <AppLoader size={16} className="text-white mr-2" /> : null}Upload</AppButton>
           </div>
         </form>
       </AppModal>
 
-      {/* Batch Modal */}
-      <AppModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} title="Link to Batch">
+      <AppModal isOpen={isBatchModalOpen} onClose={() => !isSubmitting && setIsBatchModalOpen(false)} title="Link to Batch">
         <form onSubmit={handleAssignBatch} className="space-y-4">
-          <select className="w-full border p-2.5 rounded-lg bg-white" value={selectedBatchId} onChange={e => setSelectedBatchId(e.target.value)} required>
+          <select className="w-full border p-2.5 rounded-lg bg-white" value={selectedBatchId} onChange={e => setSelectedBatchId(e.target.value)} required disabled={isSubmitting}>
             <option value="">Choose a batch...</option>
             {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
           <div className="mt-6 flex justify-end gap-3">
-            <AppButton variant="ghost" onClick={() => setIsBatchModalOpen(false)}>Cancel</AppButton>
-            <AppButton type="submit">Link Batch</AppButton>
+            <AppButton variant="ghost" onClick={() => setIsBatchModalOpen(false)} disabled={isSubmitting}>Cancel</AppButton>
+            <AppButton type="submit" disabled={isSubmitting}>{isSubmitting ? <AppLoader size={16} className="text-white mr-2" /> : null}Link Batch</AppButton>
           </div>
         </form>
       </AppModal>

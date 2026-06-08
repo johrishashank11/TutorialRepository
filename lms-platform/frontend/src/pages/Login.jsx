@@ -2,26 +2,32 @@ import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
+import { AppLoader } from '../components/common/AppLoader';
+import { useToast } from '../hooks/useToast';
 
 function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await login(username, password);
       navigate('/');
     } catch (err) {
-      alert('Login failed. Please check your credentials.');
+      toast.error('Login failed. Please check your credentials.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      {/* Decorative background circles */}
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-brand-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
@@ -49,6 +55,7 @@ function Login() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -66,14 +73,17 @@ function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-brand-600 text-white py-3 rounded-xl font-bold hover:bg-brand-700 transition shadow-lg shadow-brand-500/30 transform hover:-translate-y-0.5 active:translate-y-0"
+              disabled={isSubmitting}
+              className="flex items-center justify-center w-full bg-brand-600 text-white py-3 rounded-xl font-bold hover:bg-brand-700 transition shadow-lg shadow-brand-500/30 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:transform-none"
             >
+              {isSubmitting ? <AppLoader size={20} className="text-white mr-2" /> : null}
               Sign In
             </button>
           </form>

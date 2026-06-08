@@ -1,12 +1,14 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { FileSpreadsheet, Building2, GitBranch, Layers, BookOpen, ChevronDown, ChevronRight, CheckCircle, XCircle } from 'lucide-react';
 import { AppBadge } from '../components/common/AppBadge';
+import { AppLoader } from '../components/common/AppLoader';
 import { useToast } from '../hooks/useToast';
 import { fetchBatches } from '../services/lmsService';
 
 function BatchConfig() {
   const [batches, setBatches] = useState([]);
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const [loading, setLoading] = useState(true);
   const toast = useToast();
 
   useEffect(() => {
@@ -14,11 +16,14 @@ function BatchConfig() {
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       const res = await fetchBatches();
       setBatches(res.data || []);
     } catch (err) {
       toast.error('Failed to load batches.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -28,6 +33,8 @@ function BatchConfig() {
     else newExpandedRows.add(id);
     setExpandedRows(newExpandedRows);
   };
+
+  if (loading) return <AppLoader fullScreen />;
 
   return (
     <div className="space-y-6">

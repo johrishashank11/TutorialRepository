@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, CheckCircle, Clock, BarChart3, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { AppButton } from '../components/common/AppButton';
+import { AppLoader } from '../components/common/AppLoader';
 import { useToast } from '../hooks/useToast';
 import { fetchBatches } from '../services/lmsService';
 
@@ -14,6 +15,7 @@ const analyticsData = [
 
 function TrainerView() {
   const [batches, setBatches] = useState([]);
+  const [loading, setLoading] = useState(true);
   const toast = useToast();
 
   useEffect(() => {
@@ -21,13 +23,18 @@ function TrainerView() {
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       const res = await fetchBatches();
       setBatches(res.data || []);
     } catch (err) {
       toast.error('Failed to load batches.');
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) return <AppLoader fullScreen />;
 
   return (
     <div className="space-y-6">
@@ -106,7 +113,6 @@ function TrainerView() {
               </ResponsiveContainer>
             </div>
           </div>
-
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl shadow-sm text-white">
             <h2 className="text-lg font-semibold mb-2">Attention Required</h2>
             <p className="text-slate-300 text-sm mb-4">3 trainees in Batch D are falling behind their target progression rate by more than 20%.</p>

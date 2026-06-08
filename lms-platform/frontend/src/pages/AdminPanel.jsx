@@ -1,9 +1,10 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Users, FileSpreadsheet, UploadCloud, Plus } from 'lucide-react';
 import { AppModal } from '../components/common/AppModal';
 import { AppButton } from '../components/common/AppButton';
 import { AppInput } from '../components/common/AppInput';
 import { AppTable } from '../components/common/AppTable';
+import { AppLoader } from '../components/common/AppLoader';
 import { useToast } from '../hooks/useToast';
 import { fetchCourses, createCourse, uploadCourseContent, uploadBatchesBulk } from '../services/lmsService';
 
@@ -27,8 +28,13 @@ function AdminPanel() {
   const [file, setFile] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [bulkFile, setBulkFile] = useState(null);
+
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [isContentModalOpen, setIsContentModalOpen] = useState(false);
+
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const toast = useToast();
 
   useEffect(() => {
@@ -36,16 +42,20 @@ function AdminPanel() {
   }, []);
 
   const loadCourses = async () => {
+    setLoading(true);
     try {
       const res = await fetchCourses();
       setCourses(res.data || []);
     } catch (err) {
       toast.error('Failed to load courses.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCreateCourse = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await createCourse({ title: courseTitle, description: 'Newly created course', active: true });
       setCourseTitle('');
@@ -54,6 +64,8 @@ function AdminPanel() {
       loadCourses();
     } catch (err) {
       toast.error(err.message || 'Creation failed.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -61,6 +73,7 @@ function AdminPanel() {
     e.preventDefault();
     if (!selectedCourseId || !file) return;
 
+    setIsSubmitting(true);
     const formData = new FormData();
     formData.append('file', file);
     const ext = file.name.split('.').pop().toUpperCase();
@@ -73,9 +86,12 @@ function AdminPanel() {
     try {
       await uploadCourseContent(selectedCourseId, formData);
       setIsContentModalOpen(false);
-      toast.success('Content uploaded.');
+      setFile(null);
+      toast.success('Content uploaded successfully.');
     } catch (err) {
       toast.error(err.message || 'Upload failed.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -83,17 +99,22 @@ function AdminPanel() {
     e.preventDefault();
     if (!bulkFile) return;
 
+    setIsSubmitting(true);
     const formData = new FormData();
     formData.append('file', bulkFile);
 
     try {
       await uploadBatchesBulk(formData);
-      toast.success('Batches bulk uploaded.');
+      toast.success('Batches provisioned successfully.');
       setBulkFile(null);
     } catch (err) {
       toast.error(err.message || 'Bulk upload failed.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (loading) return <AppLoader fullScreen />;
 
   return (
     <div className="space-y-6">
@@ -144,26 +165,39 @@ function AdminPanel() {
               <input type="file" accept=".csv, .xlsx, .xls" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={e => setBulkFile(e.target.files[0])} required />
             </div>
             {bulkFile && <div className="text-sm font-medium text-emerald-600">Selected: {bulkFile.name}</div>}
-            <AppButton type="submit" disabled={!bulkFile} className="w-full justify-center">Start Provisioning</AppButton>
+            <AppButton type="submit" disabled={!bulkFile || isSubmitting} className="w-full justify-center">
+              {isSubmitting ? <AppLoader size={18} className="text-white mr-2" /> : null}
+              Start Provisioning
+            </AppButton>
           </form>
         </div>
       </div>
 
-      <AppModal isOpen={isCourseModalOpen} onClose={() => setIsCourseModalOpen(false)} title="Create New Course">
+      <AppModal isOpen={isCourseModalOpen} onClose={() => !isSubmitting && setIsCourseModalOpen(false)} title="Create New Course">
         <form onSubmit={handleCreateCourse} className="space-y-4">
-          <AppInput label="Course Title" value={courseTitle} onChange={e => setCourseTitle(e.target.value)} required placeholder="e.g. NHT Compliance Training" />
-          <div className="flex justify-end gap-2 mt-4"><AppButton type="submit">Create</AppButton></div>
+          <AppInput label="Course Title" value={courseTitle} onChange={e => setCourseTitle(e.target.value)} required placeholder="e.g. NHT Compliance Training" disabled={isSubmitting} />
+          <div className="flex justify-end gap-2 mt-4">
+            <AppButton type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <AppLoader size={16} className="text-white mr-2" /> : null}
+              Create
+            </AppButton>
+          </div>
         </form>
       </AppModal>
 
-      <AppModal isOpen={isContentModalOpen} onClose={() => setIsContentModalOpen(false)} title="Upload Course Material">
+      <AppModal isOpen={isContentModalOpen} onClose={() => !isSubmitting && setIsContentModalOpen(false)} title="Upload Course Material">
         <form onSubmit={handleUploadContent} className="space-y-4">
-          <select className="w-full border p-2.5 rounded-lg bg-white" value={selectedCourseId} onChange={e => setSelectedCourseId(e.target.value)} required>
+          <select className="w-full border p-2.5 rounded-lg bg-white" value={selectedCourseId} onChange={e => setSelectedCourseId(e.target.value)} required disabled={isSubmitting}>
             <option value="">Select Course...</option>
             {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
           </select>
-          <input type="file" className="w-full border border-gray-300 p-2 rounded-lg text-sm" onChange={e => setFile(e.target.files[0])} required />
-          <div className="flex justify-end gap-2 mt-4"><AppButton type="submit">Upload</AppButton></div>
+          <input type="file" className="w-full border border-gray-300 p-2 rounded-lg text-sm" onChange={e => setFile(e.target.files[0])} required disabled={isSubmitting} />
+          <div className="flex justify-end gap-2 mt-4">
+            <AppButton type="submit" disabled={!file || isSubmitting}>
+               {isSubmitting ? <AppLoader size={16} className="text-white mr-2" /> : null}
+               Upload
+            </AppButton>
+          </div>
         </form>
       </AppModal>
     </div>
